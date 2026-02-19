@@ -1,11 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import { ramadanSchedule } from '../data/ramadanSchedule';
+import {
+  ramadanSchedule,
+  cityAdjustments,
+  eidInfo,
+  type RamadanDay,
+} from '../data/ramadanSchedule';
+import { useCity } from '../context/CityContext';
+import { applyTimeOffset } from '../utils/timeUtils';
 
-function Modal({ day, onClose }: { day: any; onClose: () => void }) {
+function Modal({
+  day,
+  onClose,
+  offsetMinutes,
+}: {
+  day: RamadanDay;
+  onClose: () => void;
+  offsetMinutes: number;
+}) {
+  const adj = {
+    imsak: applyTimeOffset(day.imsak, offsetMinutes),
+    sabah: applyTimeOffset(day.sabah, offsetMinutes),
+    lindjaDiellit: applyTimeOffset(day.lindjaDiellit, offsetMinutes),
+    dreka: applyTimeOffset(day.dreka, offsetMinutes),
+    ikindia: applyTimeOffset(day.ikindia, offsetMinutes),
+    aksham: applyTimeOffset(day.aksham, offsetMinutes),
+    jacia: applyTimeOffset(day.jacia, offsetMinutes),
+  };
+
   return (
-    <div 
+    <div
       className="modal-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -20,7 +45,9 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
           </button>
 
           <h2 className="modal-title">{day.date}</h2>
-          <p className="modal-subtitle">{day.day}</p>
+          <p className="modal-subtitle">
+            {day.day} · Dita {day.ramadanDay} e Ramazanit
+          </p>
 
           {day.notes && (
             <div className="modal-note">
@@ -31,14 +58,14 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
 
         <div className="modal-content">
           <div className="prayer-times-grid">
-            <div className='prayer-times-grid-row'>
+            <div className="prayer-times-grid-row">
               <div className="prayer-time-card">
                 <div className="prayer-time-header">
                   <div>
                     <div className="prayer-name">Imsaku</div>
                     <div className="prayer-description">Fillimi i Agjërimit</div>
                   </div>
-                  <div className="prayer-time-imsak">{day.imsak}</div>
+                  <div className="prayer-time-imsak">{adj.imsak}</div>
                 </div>
               </div>
               <div className="prayer-time-card">
@@ -47,7 +74,7 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
                     <div className="prayer-name">Sabahu</div>
                     <div className="prayer-description">Namazi i Sabahut</div>
                   </div>
-                  <div className="prayer-time">{day.sabah}</div>
+                  <div className="prayer-time">{adj.sabah}</div>
                 </div>
               </div>
               <div className="prayer-time-card">
@@ -55,7 +82,7 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
                   <div>
                     <div className="prayer-name">Lindja e Diellit</div>
                   </div>
-                  <div className="prayer-time">{day.lindjaDiellit}</div>
+                  <div className="prayer-time">{adj.lindjaDiellit}</div>
                 </div>
               </div>
               <div className="prayer-time-card">
@@ -64,18 +91,18 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
                     <div className="prayer-name">Dreka</div>
                     <div className="prayer-description">Namazi i Drekës</div>
                   </div>
-                  <div className="prayer-time">{day.dreka}</div>
+                  <div className="prayer-time">{adj.dreka}</div>
                 </div>
               </div>
             </div>
-            <div className='prayer-times-grid-row'>
+            <div className="prayer-times-grid-row">
               <div className="prayer-time-card">
                 <div className="prayer-time-header">
                   <div>
                     <div className="prayer-name">Ikindia</div>
                     <div className="prayer-description">Namazi i Ikindisë</div>
                   </div>
-                  <div className="prayer-time">{day.ikindia}</div>
+                  <div className="prayer-time">{adj.ikindia}</div>
                 </div>
               </div>
               <div className="prayer-time-card">
@@ -84,7 +111,7 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
                     <div className="prayer-name">Akshami</div>
                     <div className="prayer-description">Përfundimi i Agjërimit</div>
                   </div>
-                  <div className="prayer-time-aksham">{day.aksham}</div>
+                  <div className="prayer-time-aksham">{adj.aksham}</div>
                 </div>
               </div>
               <div className="prayer-time-card">
@@ -93,7 +120,7 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
                     <div className="prayer-name">Jacia</div>
                     <div className="prayer-description">Namazi i Jacisë</div>
                   </div>
-                  <div className="prayer-time">{day.jacia}</div>
+                  <div className="prayer-time">{adj.jacia}</div>
                 </div>
               </div>
             </div>
@@ -105,58 +132,78 @@ function Modal({ day, onClose }: { day: any; onClose: () => void }) {
 }
 
 export default function Calendar() {
-  const [selectedDay, setSelectedDay] = useState<any>(null);
+  const [selectedDay, setSelectedDay] = useState<RamadanDay | null>(null);
   const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const { selectedCity, setSelectedCity } = useCity();
 
-  // Generate calendar grid
-  const calendarDays = [];
-  // Start with empty days for February (if needed)
-  for (let i = 0; i < 5; i++) { // March 1, 2025 starts on Saturday (5 empty days needed)
+  // Feb 19, 2026 = Thursday = 4th day (0=Sun, 4=Thu)
+  const START_OFFSET = 4;
+  const calendarDays: (RamadanDay | null)[] = [];
+  for (let i = 0; i < START_OFFSET; i++) {
     calendarDays.push(null);
   }
-  // Add Ramadan days
   calendarDays.push(...ramadanSchedule);
-  // Fill remaining days to complete the grid
-  while (calendarDays.length < 42) { // 6 rows × 7 days
+  while (calendarDays.length < 42) {
     calendarDays.push(null);
   }
 
   return (
     <div className="container">
       <div className="header">
-        <h1 className="title">Kalendari i Ramazanit 2025 / 1446H</h1>
-        <div className="view-buttons">
-          <button 
-            onClick={() => setView('calendar')}
-            className={`view-button ${view === 'calendar' ? 'active' : ''}`}
-          >
-            Pamja e Kalendarit
-          </button>
-          <button 
-            onClick={() => setView('list')}
-            className={`view-button ${view === 'list' ? 'active' : ''}`}
-          >
-            Pamja e Listës
-          </button>
+        <h1 className="title">Kalendari i Ramazanit 2026 / 1447H</h1>
+        <div className="header-right">
+          <div className="city-pill">
+            <select
+              value={selectedCity.id}
+              onChange={(e) => {
+                const city = cityAdjustments.find((c) => c.id === e.target.value);
+                if (city) setSelectedCity(city);
+              }}
+              className="city-pill-select"
+            >
+              {cityAdjustments.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="view-buttons">
+            <button
+              onClick={() => setView('calendar')}
+              className={`view-button ${view === 'calendar' ? 'active' : ''}`}
+            >
+              Pamja e Kalendarit
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`view-button ${view === 'list' ? 'active' : ''}`}
+            >
+              Pamja e Listës
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div className="eid-info-bar">
+        <span>Fitër Bajrami: {eidInfo.date}</span>
+        <span>Namazi: {eidInfo.prayerTime}</span>
       </div>
 
       {view === 'calendar' ? (
         <div className="calendar-container">
-          {/* Calendar Header */}
           <div className="calendar-header">
-            {['D', 'H', 'M', 'M', 'E', 'P', 'Sh'].map(day => (
+            {['D', 'H', 'M', 'M', 'E', 'P', 'Sh'].map((day) => (
               <div key={day} className="calendar-header-cell">
                 {day}
               </div>
             ))}
           </div>
 
-          {/* Calendar Grid */}
           <div className="calendar-grid">
             {calendarDays.map((day, index) => (
-              <div key={index} className={day ? 'calendar-day' : ''}>
-                {day && (
+              <div key={index} className={day ? 'calendar-day' : 'calendar-day-empty'}>
+                {day ? (
                   <button
                     onClick={() => setSelectedDay(day)}
                     className="calendar-day-button"
@@ -165,22 +212,24 @@ export default function Calendar() {
                       <span className={`day-number ${day.notes ? 'has-note' : ''}`}>
                         {day.date.split(' ')[0]}
                       </span>
-                      {day.notes && (
-                        <span className="note-indicator"></span>
-                      )}
+                      {day.notes && <span className="note-indicator"></span>}
                     </div>
                     <div className="day-times">
                       <div className="time-row">
-                        <span className="time-imsak">{day.imsak}</span>
+                        <span className="time-imsak">
+                          {applyTimeOffset(day.imsak, selectedCity.offsetMinutes)}
+                        </span>
                         <span className="time-label">Imsaku</span>
                       </div>
                       <div className="time-row">
-                        <span className="time-iftar">{day.aksham}</span>
+                        <span className="time-iftar">
+                          {applyTimeOffset(day.aksham, selectedCity.offsetMinutes)}
+                        </span>
                         <span className="time-label">Iftari</span>
                       </div>
                     </div>
                   </button>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
@@ -204,20 +253,31 @@ export default function Calendar() {
                 </tr>
               </thead>
               <tbody>
-                {ramadanSchedule.map(day => (
-                  <tr 
-                    key={day.date}
-                    onClick={() => setSelectedDay(day)}
-                  >
+                {ramadanSchedule.map((day) => (
+                  <tr key={day.date} onClick={() => setSelectedDay(day)}>
                     <td>{day.date}</td>
                     <td>{day.day}</td>
-                    <td className="list-time">{day.imsak}</td>
-                    <td className="list-time">{day.sabah}</td>
-                    <td className="list-time">{day.lindjaDiellit}</td>
-                    <td className="list-time">{day.dreka}</td>
-                    <td className="list-time">{day.ikindia}</td>
-                    <td className="list-time">{day.aksham}</td>
-                    <td className="list-time">{day.jacia}</td>
+                    <td className="list-time list-time-highlight">
+                      {applyTimeOffset(day.imsak, selectedCity.offsetMinutes)}
+                    </td>
+                    <td className="list-time">
+                      {applyTimeOffset(day.sabah, selectedCity.offsetMinutes)}
+                    </td>
+                    <td className="list-time">
+                      {applyTimeOffset(day.lindjaDiellit, selectedCity.offsetMinutes)}
+                    </td>
+                    <td className="list-time">
+                      {applyTimeOffset(day.dreka, selectedCity.offsetMinutes)}
+                    </td>
+                    <td className="list-time">
+                      {applyTimeOffset(day.ikindia, selectedCity.offsetMinutes)}
+                    </td>
+                    <td className="list-time list-time-highlight">
+                      {applyTimeOffset(day.aksham, selectedCity.offsetMinutes)}
+                    </td>
+                    <td className="list-time">
+                      {applyTimeOffset(day.jacia, selectedCity.offsetMinutes)}
+                    </td>
                     <td>
                       {day.notes && (
                         <span className="list-note">{day.notes}</span>
@@ -231,10 +291,13 @@ export default function Calendar() {
         </div>
       )}
 
-      {/* Modal */}
       {selectedDay && (
-        <Modal day={selectedDay} onClose={() => setSelectedDay(null)} />
+        <Modal
+          day={selectedDay}
+          onClose={() => setSelectedDay(null)}
+          offsetMinutes={selectedCity.offsetMinutes}
+        />
       )}
     </div>
   );
-} 
+}

@@ -26,5 +26,15 @@ export const translations = {
     close: "Mbyll Menynë"
   },
   ramadan: "Ramazan",
-  year: "2025 / 1446H"
+  year: "2026 / 1447H",
+  duaIftarit: "Duaja e Iftarit",
+  duaText: "O Allah, për Ty agjërova, Ty të besoj, te Ti mbështetem, dhe me begatitë Tua iftar po bëj!",
+  eidTitle: "Fitër Bajrami",
+  eidDate: "Dita e parë e Fitër Bajramit, e premte, më 20 mars 2026",
+  eidPrayer: "Namazi i Fitër Bajramit falet në orën 6:18",
+  selectCity: "Qyteti",
+  theme: {
+    light: "Drita",
+    dark: "Nata",
+  },
 }; 

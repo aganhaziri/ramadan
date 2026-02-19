@@ -1,14 +1,16 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 import { LanguageProvider } from './context/LanguageContext'
+import { CityProvider } from './context/CityContext'
+import { ThemeProvider } from './context/ThemeContext'
 import Navigation from './components/Navigation'
 
-const inter = Inter({ subsets: ['latin'] })
+const outfit = Outfit({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Ramadan Companion',
-  description: 'Your personal Ramadan companion with prayer times, countdown, and spiritual guidance',
+  title: 'Vaktia e Ramazanit 2026 | Kosovo',
+  description: 'Vaktia e Ramazanit për territorin e Republikës së Kosovës 2026 / 1447H',
 }
 
 export default function RootLayout({
@@ -17,17 +19,28 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="sq" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('ramadan-theme');document.documentElement.setAttribute('data-theme',t||'dark');})();`,
+          }}
+        />
+      </head>
+      <body className={outfit.className}>
+        <ThemeProvider>
         <LanguageProvider>
+          <CityProvider>
           <Navigation />
           <main className="min-h-screen">
             {children}
           </main>
-          <footer className="fixed bottom-0 w-full bg-white/5 backdrop-blur-sm py-2 text-center text-sm text-white/60">
-            © {new Date().getFullYear()} Agan Haziri
+          <footer className="fixed bottom-0 w-full theme-footer py-2 text-center text-sm z-10">
+            © {new Date().getFullYear()} a.h
           </footer>
+          </CityProvider>
         </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
